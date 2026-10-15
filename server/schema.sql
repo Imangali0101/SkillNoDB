@@ -1,0 +1,79 @@
+CREATE TABLE IF NOT EXISTS users (
+  id SERIAL PRIMARY KEY,
+  name VARCHAR(80) NOT NULL,
+  email VARCHAR(120) UNIQUE NOT NULL,
+  password_hash TEXT NOT NULL,
+  bio TEXT NOT NULL DEFAULT '',
+  format VARCHAR(10) NOT NULL DEFAULT 'any',
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+CREATE TABLE IF NOT EXISTS skills (
+  id SERIAL PRIMARY KEY,
+  name VARCHAR(60) UNIQUE NOT NULL
+);
+CREATE TABLE IF NOT EXISTS user_skills (
+  user_id INT REFERENCES users ON DELETE CASCADE,
+  skill_id INT REFERENCES skills ON DELETE CASCADE,
+  level SMALLINT NOT NULL CHECK (level BETWEEN 1 AND 3),
+  PRIMARY KEY (user_id, skill_id)
+);
+CREATE TABLE IF NOT EXISTS learning_goals (
+  user_id INT REFERENCES users ON DELETE CASCADE,
+  skill_id INT REFERENCES skills ON DELETE CASCADE,
+  level SMALLINT NOT NULL CHECK (level BETWEEN 1 AND 3),
+  PRIMARY KEY (user_id, skill_id)
+);
+CREATE TABLE IF NOT EXISTS availability (
+  user_id INT REFERENCES users ON DELETE CASCADE,
+  day SMALLINT NOT NULL CHECK (day BETWEEN 0 AND 6),
+  hour SMALLINT NOT NULL CHECK (hour BETWEEN 0 AND 23),
+  PRIMARY KEY (user_id, day, hour)
+);
+CREATE TABLE IF NOT EXISTS matches (
+  id SERIAL PRIMARY KEY,
+  learner_id INT REFERENCES users ON DELETE CASCADE,
+  teacher_id INT REFERENCES users ON DELETE CASCADE,
+  skill_id INT REFERENCES skills ON DELETE CASCADE,
+  score NUMERIC(5,1),
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+CREATE TABLE IF NOT EXISTS sessions (
+  id SERIAL PRIMARY KEY,
+  teacher_id INT NOT NULL REFERENCES users ON DELETE CASCADE,
+  learner_id INT NOT NULL REFERENCES users ON DELETE CASCADE,
+  skill_id INT NOT NULL REFERENCES skills ON DELETE CASCADE,
+  starts_at TIMESTAMPTZ NOT NULL,
+  price INT NOT NULL DEFAULT 10,
+  status VARCHAR(12) NOT NULL DEFAULT 'booked',
+  teacher_confirmed BOOLEAN NOT NULL DEFAULT false,
+  learner_confirmed BOOLEAN NOT NULL DEFAULT false,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+CREATE TABLE IF NOT EXISTS reviews (
+  id SERIAL PRIMARY KEY,
+  session_id INT UNIQUE REFERENCES sessions ON DELETE CASCADE,
+  author_id INT REFERENCES users ON DELETE CASCADE,
+  teacher_id INT REFERENCES users ON DELETE CASCADE,
+  skill_id INT REFERENCES skills ON DELETE CASCADE,
+  rating SMALLINT NOT NULL CHECK (rating BETWEEN 1 AND 5),
+  comment TEXT NOT NULL DEFAULT '',
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+CREATE TABLE IF NOT EXISTS wallets (
+  user_id INT PRIMARY KEY REFERENCES users ON DELETE CASCADE,
+  balance INT NOT NULL DEFAULT 0 CHECK (balance >= 0),
+  reserved INT NOT NULL DEFAULT 0 CHECK (reserved >= 0)
+);
+CREATE TABLE IF NOT EXISTS point_transactions (
+  id SERIAL PRIMARY KEY,
+  user_id INT REFERENCES users ON DELETE CASCADE,
+  session_id INT REFERENCES sessions ON DELETE SET NULL,
+  amount INT NOT NULL,
+  type VARCHAR(12) NOT NULL,
+  note TEXT NOT NULL DEFAULT '',
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+INSERT INTO skills(name) VALUES
+ ('Python'),('JavaScript'),('SQL'),('Английский'),('Математика'),('Казахский'),
+ ('Дизайн (Figma)'),('Excel'),('Гитара'),('Шахматы'),('Публичные выступления'),('Фотография')
+ON CONFLICT DO NOTHING;
